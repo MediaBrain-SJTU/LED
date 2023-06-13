@@ -2,7 +2,6 @@ absl-py==1.4.0
 aiohttp==3.8.4
 aiosignal==1.3.1
 antlr4-python3-runtime==4.8
--e git+https://github.com/argoai/argoverse-api.git@f886ac54fba9f06f8a7d109eb663c7f501b3aa8e#egg=argoverse
 async-timeout==4.0.2
 asynctest==0.13.0
 attrs==23.1.0
@@ -75,11 +74,6 @@ tensorboardX==2.6
 threadpoolctl==3.1.0
 tifffile==2021.11.2
 torch==1.8.0+cu111
-torch-cluster==1.6.0
-torch-geometric==1.7.2
-torch-scatter==2.1.1
-torch-sparse==0.6.10
-torch-spline-conv==1.2.2
 torchaudio==0.8.0
 torchmetrics==0.11.4
 torchvision==0.9.0+cu111
