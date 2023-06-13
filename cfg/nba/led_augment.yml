@@ -1,0 +1,29 @@
+# ------------------- General Options -------------------------
+description                  : LED
+results_root_dir             : results
+dataset                      : nba
+
+# ------------------- Dataset -------------------------
+past_frames                  : 10
+future_frames                : 20
+min_past_frames              : 10
+min_future_frames            : 20
+
+motion_dim                   : 2
+forecast_dim                 : 2
+
+traj_mean                    : [14, 7.5]
+traj_scale                   : 5
+
+# ------------------- Model -------------------------
+pretrained_core_denoising_model: './results/checkpoints/base_diffusion_model.p'
+
+# ------------------- Training Parameters -------------------------
+lr                           : 1.e-3
+batch_size                   : 10
+num_epochs                   : 100
+
+lr_scheduler                 : 'step'
+decay_step                   : 8
+decay_gamma                  : 0.5
+
