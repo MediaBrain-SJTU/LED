@@ -25,7 +25,7 @@ Overall project structure:
     |----README.md
     |----requirements.txt # packages to install                    
     |----main_led_nba.py  # [CORE] main file
-    |----trainer\ # [CORE] main training files 
+    |----trainer\ # [CORE] main training files, we define the denoising process HERE!
     |    |----train_led_trajectory_augment_input.py 
     |----models\  # [CORE] define models under this file
     |    |----model_led_initializer.py                    
@@ -50,9 +50,10 @@ Please download the data and results from [Google Drive](https://drive.google.co
 
 **TODO list**:
 
-1. - [ ] add training/evaluation for diffusion models (in two weeks).
-2. - [ ] more detailed descripition in trainers (in one month).
-3. - [ ] transfer the parameters in models into yaml.
+- [ ] add training/evaluation for diffusion models (in two weeks).
+- [ ] more detailed descripition in trainers (in one month).
+- [ ] transfer the parameters in models into yaml.
+- [ ] other fast sampling methods (DDIM and PD).
 
 
 ### 2.1. Environment
