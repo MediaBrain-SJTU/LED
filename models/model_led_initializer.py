@@ -3,15 +3,24 @@ import torch.nn as nn
 from models.layers import MLP, social_transformer, st_encoder
 
 class LEDInitializer(nn.Module):
-	def __init__(self, t_obs=8, s=2, n=20):
-		super(LEDInitializer, self).__init__()
-		self.s, self.n = s, n
-		self.input_dim = t_obs * 6
-		self.hidden_dim = self.input_dim * 4
-		self.output_dim = s * n
-		self.fut_len = s // 2
+	def __init__(self, t_h: int=8, d_h: int=6, t_f: int=40, d_f: int=2, k_pred: int=20):
+		'''
+		Parameters
+		----
+		t_h: history timestamps,
+		d_h: dimension of each historical timestamp,
+		t_f: future timestamps,
+		d_f: dimension of each future timestamp,
+		k_pred: number of predictions.
 
-		self.social_encoder = social_transformer(t_obs)
+		'''
+		super(LEDInitializer, self).__init__()
+		self.n = k_pred
+		self.input_dim = t_h * d_h
+		self.output_dim = t_f * d_f * k_pred
+		self.fut_len = t_f
+
+		self.social_encoder = social_transformer(t_h)
 		self.ego_var_encoder = st_encoder()
 		self.ego_mean_encoder = st_encoder()
 		self.ego_scale_encoder = st_encoder()
@@ -19,7 +28,7 @@ class LEDInitializer(nn.Module):
 		self.scale_encoder = MLP(1, 32, hid_feat=(4, 16), activation=nn.ReLU())
 
 		self.var_decoder = MLP(256*2+32, self.output_dim, hid_feat=(1024, 1024), activation=nn.ReLU())
-		self.mean_decoder = MLP(256*2, s, hid_feat=(256, 128), activation=nn.ReLU())
+		self.mean_decoder = MLP(256*2, t_f * d_f, hid_feat=(256, 128), activation=nn.ReLU())
 		self.scale_decoder = MLP(256*2, 1, hid_feat=(256, 128), activation=nn.ReLU())
 
 	

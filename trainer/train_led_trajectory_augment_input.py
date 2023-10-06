@@ -17,7 +17,7 @@ from data.dataloader_nba import NBADataset, seq_collate
 from models.model_led_initializer import LEDInitializer as InitializationModel
 from models.model_diffusion import TransformerDenoisingModel as CoreDenoisingModel
 
-
+import pdb
 NUM_Tau = 5
 
 class Trainer:
@@ -26,7 +26,7 @@ class Trainer:
 		if torch.cuda.is_available(): torch.cuda.set_device(config.gpu)
 		self.device = torch.device('cuda') if config.cuda else torch.device('cpu')
 		self.cfg = Config(config.cfg, config.info)
-
+		
 		# ------------------------- prepare train/test data loader -------------------------
 		train_dset = NBADataset(
 			obs_len=self.cfg.past_frames,
@@ -35,7 +35,7 @@ class Trainer:
 
 		self.train_loader = DataLoader(
 			train_dset,
-			batch_size=self.cfg.batch_size,
+			batch_size=self.cfg.train_batch_size,
 			shuffle=True,
 			num_workers=4,
 			collate_fn=seq_collate,
@@ -48,7 +48,7 @@ class Trainer:
 
 		self.test_loader = DataLoader(
 			test_dset,
-			batch_size=500,
+			batch_size=self.cfg.test_batch_size,
 			shuffle=False,
 			num_workers=4,
 			collate_fn=seq_collate,
@@ -59,10 +59,13 @@ class Trainer:
 		self.traj_scale = self.cfg.traj_scale
 
 		# ------------------------- define diffusion parameters -------------------------
-		self.n_steps = 100 # define total diffusion steps
+		self.n_steps = self.cfg.diffusion.steps # define total diffusion steps
 
 		# make beta schedule and calculate the parameters used in denoising process.
-		self.betas = self.make_beta_schedule(schedule='linear', n_timesteps=self.n_steps, start=1e-4, end=5e-2).cuda()
+		self.betas = self.make_beta_schedule(
+			schedule=self.cfg.diffusion.beta_schedule, n_timesteps=self.n_steps, 
+			start=self.cfg.diffusion.beta_start, end=self.cfg.diffusion.beta_end).cuda()
+		
 		self.alphas = 1 - self.betas
 		self.alphas_prod = torch.cumprod(self.alphas, 0)
 		self.alphas_bar_sqrt = torch.sqrt(self.alphas_prod)
@@ -75,7 +78,7 @@ class Trainer:
 		model_cp = torch.load(self.cfg.pretrained_core_denoising_model, map_location='cpu')
 		self.model.load_state_dict(model_cp['model_dict'])
 
-		self.model_initializer = InitializationModel(t_obs=10, s=40, n=20).cuda()
+		self.model_initializer = InitializationModel(t_h=10, d_h=6, t_f=20, d_f=2, k_pred=20).cuda()
 
 		self.opt = torch.optim.AdamW(self.model_initializer.parameters(), lr=config.learning_rate)
 		self.scheduler_model = torch.optim.lr_scheduler.StepLR(self.opt, step_size=self.cfg.decay_step, gamma=self.cfg.decay_gamma)
@@ -107,10 +110,10 @@ class Trainer:
 
 		Parameters
 		----
-		schedule: ['linear', 'quad', 'sigmoid'],
-		n_timesteps: diffusion steps,
-		start: beta start, `start<end`,
-		end: beta end,
+		schedule: str, in ['linear', 'quad', 'sigmoid'],
+		n_timesteps: int, diffusion steps,
+		start: float, beta start, `start<end`,
+		end: float, beta end,
 
 		Returns
 		----
@@ -240,7 +243,7 @@ class Trainer:
 				time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 
 				epoch, loss_total, loss_distance, loss_uncertainty), self.log)
 			
-			if (epoch + 1) % 2 == 0:
+			if (epoch + 1) % self.cfg.test_interval == 0:
 				performance, samples = self._test_single_epoch()
 				for time_i in range(4):
 					print_log('--ADE({}s): {:.4f}\t--FDE({}s): {:.4f}'.format(
@@ -315,7 +318,7 @@ class Trainer:
 			torch.nn.utils.clip_grad_norm_(self.model_initializer.parameters(), 1.)
 			self.opt.step()
 			count += 1
-			if count == 2:
+			if self.cfg.debug and count == 2:
 				break
 
 		return loss_total/count, loss_dt/count, loss_dc/count
